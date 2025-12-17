@@ -237,7 +237,7 @@ const App: React.FC = () => {
     setBillItems(billItems.filter(item => item.id !== id));
   };
 
-  const handleGeneratePDF = () => {
+  const handleGeneratePDF = async () => {
     if (billItems.length === 0) {
       alert("Please add at least one entry.");
       return;
@@ -245,7 +245,7 @@ const App: React.FC = () => {
     const dateObj = new Date(billDate);
     const formattedDate = `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getFullYear()).slice(-2)}`;
     
-    generateBillPDF(billType, formattedDate, billItems);
+    await generateBillPDF(billType, formattedDate, billItems);
   };
 
   const exportDatabase = () => {
