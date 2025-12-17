@@ -1,18 +1,26 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Trash2, FileDown, Database, Save, Moon, Coffee, Upload, Settings, Search, User, Briefcase, Calendar, Lock, Unlock } from 'lucide-react';
+import { Plus, Trash2, FileDown, Database, Save, Moon, Coffee, Upload, Settings, Search, User, Briefcase, Calendar, Lock, Unlock, Code, Cloud, CheckCircle2, XCircle } from 'lucide-react';
 import { Employee, BillItem, BillType } from './types';
 import { generateBillPDF } from './services/pdfService';
+import { INITIAL_DB } from './database';
 
 const App: React.FC = () => {
   // -- State --
-  // FIXED: Initialize state lazily from localStorage to prevent overwriting on refresh
+  // Initialize state from localStorage, falling back to INITIAL_DB (code) if empty
   const [employees, setEmployees] = useState<Employee[]>(() => {
     try {
       const saved = localStorage.getItem('tusuka_employees');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 0 && INITIAL_DB.length > 0) {
+            return INITIAL_DB;
+        }
+        return parsed;
+      }
+      return INITIAL_DB;
     } catch (e) {
       console.error("Failed to load database", e);
-      return [];
+      return INITIAL_DB;
     }
   });
 
@@ -21,6 +29,7 @@ const App: React.FC = () => {
   const [billDate, setBillDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showSettings, setShowSettings] = useState(false);
   const [securityInput, setSecurityInput] = useState('');
+  const [serverDBStatus, setServerDBStatus] = useState<'loading' | 'connected' | 'not-found'>('loading');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null); // For auto-focus
@@ -61,7 +70,70 @@ const App: React.FC = () => {
   };
 
   // -- Effects --
-  // Save database on change (Persist immediately)
+  
+  // 1. Load Server CSV on Mount
+  useEffect(() => {
+    const fetchServerCSV = async () => {
+      try {
+        const response = await fetch('/database.csv');
+        if (response.ok) {
+           const text = await response.text();
+           const lines = text.split('\n');
+           const csvEmployees: Employee[] = [];
+           
+           for (let i = 0; i < lines.length; i++) {
+             const line = lines[i].trim();
+             if (!line) continue;
+             const cols = line.split(',');
+             if (cols.length < 3) continue;
+             
+             // Check if header
+             if (i === 0 && cols[0].toLowerCase().includes('name')) continue;
+
+             csvEmployees.push({
+               id: `server-${Math.random().toString(36).substr(2, 9)}`,
+               name: cols[0].trim(),
+               cardNo: cols[1].trim(),
+               designation: cols[2].trim(),
+               defaultTaka: cols[3] ? Number(cols[3]) : 0
+             });
+           }
+
+           if (csvEmployees.length > 0) {
+              setServerDBStatus('connected');
+              setEmployees(prev => {
+                  // Merge strategy: Server Data + Local Data (Deduplicated by Card No)
+                  // We prioritize Server Data as the "Truth" for shared records
+                  const map = new Map<string, Employee>();
+                  
+                  // Add server items first
+                  csvEmployees.forEach(e => map.set(e.cardNo, e));
+                  
+                  // Add local items if they don't exist in server (preserves local additions)
+                  prev.forEach(e => {
+                      if (!map.has(e.cardNo)) {
+                          map.set(e.cardNo, e);
+                      }
+                  });
+                  
+                  return Array.from(map.values());
+              });
+           } else {
+             setServerDBStatus('not-found');
+           }
+        } else {
+          setServerDBStatus('not-found');
+        }
+      } catch (e) {
+        console.warn("Server DB fetch failed", e);
+        setServerDBStatus('not-found');
+      }
+    };
+
+    fetchServerCSV();
+  }, []);
+
+  // 2. Save database on change (Persist immediately to local storage)
   useEffect(() => {
     localStorage.setItem('tusuka_employees', JSON.stringify(employees));
   }, [employees]);
@@ -266,10 +338,23 @@ const App: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `tusuka_db_backup_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `database.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // NEW: Helper to copy database state as code
+  const handleCopyForCode = () => {
+    const json = JSON.stringify(employees, null, 2);
+    const codeContent = `import { Employee } from './types';\n\n// This is the permanent database stored in the code.\n// Paste this into database.ts to update the master list.\nexport const INITIAL_DB: Employee[] = ${json};`;
+    
+    navigator.clipboard.writeText(codeContent).then(() => {
+      alert("Database code copied to clipboard!\n\nACTION REQUIRED:\n1. Open your project folder.\n2. Open the file 'database.ts'.\n3. Paste this code to replace the existing content.\n4. Re-deploy the app.\n\nNow this data will be available on all devices.");
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert("Failed to copy. Please check console.");
+    });
   };
 
   const handleImportClick = () => {
@@ -418,6 +503,13 @@ const App: React.FC = () => {
                    </button>
                 </div>
 
+                {/* Server DB Status Pill */}
+                {serverDBStatus === 'connected' && (
+                    <div className="mb-2 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-[9px] font-bold flex items-center gap-1">
+                        <CheckCircle2 size={10} /> Linked to Server Database (database.csv)
+                    </div>
+                )}
+
                 {/* Hidden DB Tools */}
                 {showSettings && (
                    <div className="mb-3 bg-slate-50 p-3 rounded-lg border border-slate-100 animate-in slide-in-from-top-2 fade-in duration-200">
@@ -443,14 +535,39 @@ const App: React.FC = () => {
                             <p className="text-[9px] text-slate-400 italic text-center">Enter "Fabric2038" to access tools</p>
                          </div>
                       ) : (
-                        <div className="flex gap-2 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200">
+                           {/* Export/Import Buttons */}
+                           <div className="flex gap-2">
                              <button onClick={exportDatabase} className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-slate-200 py-1.5 rounded-md text-[10px] font-semibold hover:border-slate-300 hover:shadow-sm transition-all text-slate-600">
                                 <Database size={10} /> Export CSV
                              </button>
                              <button onClick={handleImportClick} className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-slate-200 py-1.5 rounded-md text-[10px] font-semibold hover:border-slate-300 hover:shadow-sm transition-all text-slate-600">
                                 <Upload size={10} /> Import CSV
                              </button>
-                             <input type="file" accept=".csv" ref={fileInputRef} className="hidden" onChange={importDatabase} />
+                           </div>
+
+                           {/* Instructions for Server DB */}
+                           <div className="bg-white border border-blue-100 rounded-md p-2 mt-1">
+                                <p className="text-[9px] font-bold text-blue-800 mb-1 flex items-center gap-1"><Cloud size={10} /> Persistent Storage (Server DB)</p>
+                                <p className="text-[8px] text-slate-500 leading-relaxed mb-1.5">
+                                    To share data across all devices automatically:
+                                </p>
+                                <ol className="list-decimal pl-3 text-[8px] text-slate-500 space-y-0.5">
+                                    <li>Export the CSV using the button above.</li>
+                                    <li>Rename the file to <span className="font-mono bg-slate-100 px-0.5 rounded">database.csv</span></li>
+                                    <li>Upload it to your project's <span className="font-mono bg-slate-100 px-0.5 rounded">public</span> folder.</li>
+                                    <li>Redeploy the app.</li>
+                                </ol>
+                                <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                    <span className="text-[8px] font-bold text-slate-400">Status:</span>
+                                    {serverDBStatus === 'connected' ? 
+                                        <span className="text-[8px] font-bold text-emerald-600 flex items-center gap-1"><CheckCircle2 size={8} /> Connected</span> : 
+                                        <span className="text-[8px] font-bold text-orange-400 flex items-center gap-1"><XCircle size={8} /> No Server File</span>
+                                    }
+                                </div>
+                           </div>
+                           
+                           <input type="file" accept=".csv" ref={fileInputRef} className="hidden" onChange={importDatabase} />
                         </div>
                       )}
                    </div>
@@ -728,5 +845,6 @@ const App: React.FC = () => {
     </div>
   );
 };
+
 
 export default App;
