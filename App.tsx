@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Trash2, FileDown, Database, Save, Moon, Coffee, Upload, Settings, Search, User, Briefcase, Calendar } from 'lucide-react';
+import { Plus, Trash2, FileDown, Database, Save, Moon, Coffee, Upload, Settings, Search, User, Briefcase, Calendar, Lock, Unlock } from 'lucide-react';
 import { Employee, BillItem, BillType } from './types';
 import { generateBillPDF } from './services/pdfService';
 
@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const [billType, setBillType] = useState<BillType>(BillType.TIFFIN);
   const [billDate, setBillDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showSettings, setShowSettings] = useState(false);
+  const [securityInput, setSecurityInput] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null); // For auto-focus
@@ -77,6 +78,8 @@ const App: React.FC = () => {
   const currentTaka = useMemo(() => {
     return calculateRate(billType, formData.designation, nightSoRate);
   }, [billType, formData.designation, nightSoRate]);
+  
+  const isUnlocked = securityInput === 'Fabric2038';
 
   // Theme Colors based on Bill Type
   const themeColor = useMemo(() => {
@@ -248,6 +251,14 @@ const App: React.FC = () => {
     await generateBillPDF(billType, formattedDate, billItems);
   };
 
+  const handleToggleSettings = () => {
+    if (showSettings) {
+      // Closing settings, reset security
+      setSecurityInput('');
+    }
+    setShowSettings(!showSettings);
+  };
+
   const exportDatabase = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Name,CardNo,Designation,DefaultTaka\n"
@@ -259,6 +270,10 @@ const App: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
   };
 
   const importDatabase = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -394,7 +409,7 @@ const App: React.FC = () => {
                      Configuration
                    </h2>
                    <button 
-                     onClick={() => setShowSettings(!showSettings)}
+                     onClick={handleToggleSettings}
                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-gray-50 hover:bg-gray-100 border border-gray-100 hover:border-gray-200 text-gray-500 hover:text-${themeColor}-600 transition-all shadow-sm active:scale-95`}
                      title="Database Settings"
                    >
@@ -407,18 +422,37 @@ const App: React.FC = () => {
                 {showSettings && (
                    <div className="mb-3 bg-slate-50 p-3 rounded-lg border border-slate-100 animate-in slide-in-from-top-2 fade-in duration-200">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-bold text-[10px] text-slate-500 uppercase">Database Memory</span>
+                        <span className="font-bold text-[10px] text-slate-500 uppercase flex items-center gap-1">
+                          Database Memory {isUnlocked ? <Unlock size={8} className="text-green-500" /> : <Lock size={8} className="text-slate-300" />}
+                        </span>
                         <span className="bg-slate-200 text-slate-700 text-[9px] px-1.5 py-0.5 rounded-full font-bold">{employees.length} Records</span>
                       </div>
-                      <div className="flex gap-2">
-                         <button onClick={exportDatabase} className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-slate-200 py-1.5 rounded-md text-[10px] font-semibold hover:border-slate-300 hover:shadow-sm transition-all text-slate-600">
-                            <Database size={10} /> Export CSV
-                         </button>
-                         <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-slate-200 py-1.5 rounded-md text-[10px] font-semibold hover:border-slate-300 hover:shadow-sm transition-all text-slate-600">
-                            <Upload size={10} /> Import CSV
-                         </button>
-                         <input type="file" accept=".csv" ref={fileInputRef} className="hidden" onChange={importDatabase} />
-                      </div>
+                      
+                      {!isUnlocked ? (
+                         <div className="flex flex-col gap-2">
+                            <div className="relative">
+                                <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                                <input 
+                                    type="password" 
+                                    placeholder="Enter Security Key"
+                                    className="w-full pl-8 pr-3 py-1.5 text-[10px] border border-slate-200 rounded-md outline-none focus:border-slate-400 transition-all font-mono"
+                                    value={securityInput}
+                                    onChange={(e) => setSecurityInput(e.target.value)}
+                                />
+                            </div>
+                            <p className="text-[9px] text-slate-400 italic text-center">Enter "Fabric2038" to access tools</p>
+                         </div>
+                      ) : (
+                        <div className="flex gap-2 animate-in fade-in zoom-in-95 duration-200">
+                             <button onClick={exportDatabase} className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-slate-200 py-1.5 rounded-md text-[10px] font-semibold hover:border-slate-300 hover:shadow-sm transition-all text-slate-600">
+                                <Database size={10} /> Export CSV
+                             </button>
+                             <button onClick={handleImportClick} className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-slate-200 py-1.5 rounded-md text-[10px] font-semibold hover:border-slate-300 hover:shadow-sm transition-all text-slate-600">
+                                <Upload size={10} /> Import CSV
+                             </button>
+                             <input type="file" accept=".csv" ref={fileInputRef} className="hidden" onChange={importDatabase} />
+                        </div>
+                      )}
                    </div>
                 )}
 
