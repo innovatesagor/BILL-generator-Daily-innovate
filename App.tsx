@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Trash2, FileDown, Database, Save, Moon, Coffee, Upload, Settings, Search, User, Briefcase, Calendar, Lock, Unlock, Code, Cloud, CheckCircle2, XCircle } from 'lucide-react';
+import { Plus, Trash2, FileDown, Database, Save, Moon, Coffee, Upload, Settings, Search, User, Briefcase, Calendar, Lock, Unlock, Cloud, CheckCircle2, XCircle } from 'lucide-react';
 import { Employee, BillItem, BillType } from './types';
 import { generateBillPDF } from './services/pdfService';
 import { INITIAL_DB } from './database';
@@ -342,19 +342,6 @@ const App: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  // NEW: Helper to copy database state as code
-  const handleCopyForCode = () => {
-    const json = JSON.stringify(employees, null, 2);
-    const codeContent = `import { Employee } from './types';\n\n// This is the permanent database stored in the code.\n// Paste this into database.ts to update the master list.\nexport const INITIAL_DB: Employee[] = ${json};`;
-    
-    navigator.clipboard.writeText(codeContent).then(() => {
-      alert("Database code copied to clipboard!\n\nACTION REQUIRED:\n1. Open your project folder.\n2. Open the file 'database.ts'.\n3. Paste this code to replace the existing content.\n4. Re-deploy the app.\n\nNow this data will be available on all devices.");
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
-        alert("Failed to copy. Please check console.");
-    });
   };
 
   const handleImportClick = () => {
@@ -845,6 +832,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-
 
 export default App;
