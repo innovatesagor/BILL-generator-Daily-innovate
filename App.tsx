@@ -472,20 +472,27 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="max-w-7xl mx-auto px-4 mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch lg:h-[calc(100vh-100px)] lg:min-h-[600px]">
         
         {/* Left Sidebar: Controls */}
-        <div className="lg:col-span-4 space-y-3">
+        <div className="lg:col-span-4 flex flex-col gap-4 h-full">
           
           {/* Settings Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group shrink-0">
              {/* Decorative Top Bar */}
              <div className={`h-1 w-full bg-gradient-to-r from-${themeColor}-400 to-${themeColor}-600`}></div>
              
              <div className="p-3">
                 <div className="flex justify-between items-center mb-2">
                    <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                     Configuration
+                     {/* Server DB Status Pill */}
+                {serverDBStatus === 'connected' && (
+                    <div className="mb-2 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-[9px] font-bold flex items-center gap-1">
+                        <CheckCircle2 size={12} /> {employees.length} Records Loaded
+                    </div>
+                    
+                )}
+                
                    </h2>
                    <button 
                      onClick={handleToggleSettings}
@@ -496,13 +503,22 @@ const App: React.FC = () => {
                      <span className="text-[10px] font-bold">Settings</span>
                    </button>
                 </div>
-
-                {/* Server DB Status Pill */}
-                {serverDBStatus === 'connected' && (
-                    <div className="mb-2 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-[9px] font-bold flex items-center gap-1">
-                        <CheckCircle2 size={20} /> {employees.length} Record Loaded
+                
+                <div className={`bg-${themeColor}-50 border border-${themeColor}-100 rounded-lg p-2.5 flex items-start gap-2.5 mb-2`}>
+                    <div className={`p-1 bg-white rounded-full text-${themeColor}-600 shadow-sm mt-0.5`}>
+                        {billType === BillType.NIGHT_ENTERTAINMENT ? <Moon size={12} /> : <Coffee size={12} />}
                     </div>
-                )}
+                    <div>
+                        <p className={`text-[9px] font-bold text-${themeColor}-800 uppercase`}>Current Rate Policy</p>
+                        <p className={`text-[10px] font-medium text-${themeColor}-600 mt-0.5 leading-tight`}>
+                            {billType === BillType.TIFFIN && "Fixed Rate: 50 Tk"}
+                            {billType === BillType.DAILY_LABOUR && "Fixed Rate: 600 Tk"}
+                            {billType === BillType.HOLIDAY && "S/O & Exec: 800 Tk | Labour: 600 Tk"}
+                            {billType === BillType.NIGHT_ENTERTAINMENT && `S/O: ${nightSoRate} Tk | Labour: 150 Tk`}
+                            {billType !== BillType.TIFFIN && billType !== BillType.NIGHT_ENTERTAINMENT && billType !== BillType.DAILY_LABOUR && billType !== BillType.HOLIDAY && "Manual Entry Mode"}
+                        </p>
+                    </div>
+                </div>
 
                 {/* Hidden DB Tools */}
                 {showSettings && (
@@ -602,85 +618,71 @@ const App: React.FC = () => {
                 </div>
 
                 {/* Info Pill */}
-                <div className={`mt-2 bg-${themeColor}-50 border border-${themeColor}-100 rounded-lg p-2.5 flex items-start gap-2.5`}>
-                    <div className={`p-1 bg-white rounded-full text-${themeColor}-600 shadow-sm mt-0.5`}>
-                        {billType === BillType.NIGHT_ENTERTAINMENT ? <Moon size={12} /> : <Coffee size={12} />}
-                    </div>
-                    <div>
-                        <p className={`text-[9px] font-bold text-${themeColor}-800 uppercase`}>Current Rate Policy</p>
-                        <p className={`text-[10px] font-medium text-${themeColor}-600 mt-0.5 leading-tight`}>
-                            {billType === BillType.TIFFIN && "Fixed Rate: 50 Tk"}
-                            {billType === BillType.DAILY_LABOUR && "Fixed Rate: 600 Tk"}
-                            {billType === BillType.HOLIDAY && "S/O & Exec: 800 Tk | Labour: 600 Tk"}
-                            {billType === BillType.NIGHT_ENTERTAINMENT && `S/O: ${nightSoRate} Tk | Labour: 150 Tk`}
-                            {billType !== BillType.TIFFIN && billType !== BillType.NIGHT_ENTERTAINMENT && billType !== BillType.DAILY_LABOUR && billType !== BillType.HOLIDAY && "Manual Entry Mode"}
-                        </p>
-                    </div>
-                </div>
+                
              </div>
           </div>
 
-          {/* Input Card */}
-          <div className="bg-white rounded-xl shadow-md shadow-gray-200/50 border border-gray-100 overflow-hidden relative">
-            <div className="p-3">
-                <h2 className="text-xs font-bold text-gray-800 uppercase mb-2 flex items-center gap-2">
-                  <div className={`w-5 h-5 rounded bg-${themeColor}-100 text-${themeColor}-600 flex items-center justify-center`}>
-                    <Plus size={12} strokeWidth={3} />
+          {/* Input Card - Now Grows */}
+          <div className="bg-white rounded-xl shadow-md shadow-gray-200/50 border border-gray-100 overflow-hidden relative flex-1 flex flex-col">
+            <div className="p-6 flex flex-col h-full">
+                <h2 className="text-sm font-bold text-gray-800 uppercase mb-6 flex items-center gap-2">
+                  <div className={`w-6 h-6 rounded bg-${themeColor}-100 text-${themeColor}-600 flex items-center justify-center`}>
+                    <Plus size={14} strokeWidth={3} />
                   </div>
                   New Entry
                 </h2>
 
-                <div className="space-y-3">
-                    {/* Horizontal Inputs */}
-                    <div className="flex gap-2 relative items-start">
-                        {/* Name (40%) */}
-                        <div className="w-[40%] space-y-0.5">
-                            <label className="text-[9px] font-bold text-gray-400 uppercase">Name</label>
-                            <div className="relative group">
-                                <User className="absolute left-2.5 top-2 text-gray-400 group-focus-within:text-gray-600 transition-colors" size={12} />
-                                <input 
-                                    ref={nameInputRef}
-                                    name="name"
-                                    type="text" 
-                                    autoComplete="off"
-                                    className={`w-full pl-8 pr-2 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:ring-2 focus:ring-${themeColor}-500/20 focus:border-${themeColor}-500 transition-all font-semibold text-gray-800 placeholder:text-gray-300`}
-                                    placeholder="Name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    onKeyDown={handleKeyDown}
-                                />
-                                {showSuggestions && suggestions.length > 0 && (
-                                    <div className="absolute top-full left-0 z-20 w-[240px] bg-white border border-gray-100 shadow-xl rounded-xl mt-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                    <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 text-[9px] font-bold text-gray-400 uppercase">Suggestions</div>
-                                    <div className="max-h-56 overflow-y-auto">
-                                        {suggestions.map(emp => (
-                                            <div 
-                                            key={emp.id} 
-                                            className={`px-3 py-1.5 hover:bg-${themeColor}-50 cursor-pointer border-b border-gray-50 last:border-0 group`}
-                                            onClick={() => selectEmployee(emp)}
-                                            >
-                                            <div className="flex justify-between items-center">
-                                                <span className={`font-bold text-gray-700 group-hover:text-${themeColor}-700 text-xs`}>{emp.name}</span>
-                                                <span className="text-[9px] bg-gray-100 px-1 py-0.5 rounded text-gray-500 font-mono">{emp.cardNo}</span>
-                                            </div>
-                                            <div className="text-[9px] text-gray-400 mt-0.5">{emp.designation}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    </div>
-                                )}
-                            </div>
+                <div className="flex-1 flex flex-col gap-6">
+                    {/* Name Field - Full Width */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Employee Name</label>
+                        <div className="relative group">
+                            <User className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-gray-600 transition-colors" size={18} />
+                            <input 
+                                ref={nameInputRef}
+                                name="name"
+                                type="text" 
+                                autoComplete="off"
+                                className={`w-full pl-12 pr-4 py-3 text-base border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-${themeColor}-500/20 focus:border-${themeColor}-500 transition-all font-bold text-gray-800 placeholder:text-gray-300`}
+                                placeholder="Start typing name..."
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                onKeyDown={handleKeyDown}
+                            />
+                            {showSuggestions && suggestions.length > 0 && (
+                                <div className="absolute top-full left-0 z-20 w-full bg-white border border-gray-100 shadow-xl rounded-xl mt-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                <div className="bg-gray-50 px-3 py-2 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase">Suggestions</div>
+                                <div className="max-h-56 overflow-y-auto">
+                                    {suggestions.map(emp => (
+                                        <div 
+                                        key={emp.id} 
+                                        className={`px-4 py-2 hover:bg-${themeColor}-50 cursor-pointer border-b border-gray-50 last:border-0 group`}
+                                        onClick={() => selectEmployee(emp)}
+                                        >
+                                        <div className="flex justify-between items-center">
+                                            <span className={`font-bold text-gray-700 group-hover:text-${themeColor}-700 text-sm`}>{emp.name}</span>
+                                            <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-mono">{emp.cardNo}</span>
+                                        </div>
+                                        <div className="text-[10px] text-gray-400 mt-0.5">{emp.designation}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                </div>
+                            )}
                         </div>
+                    </div>
 
-                        {/* Card (25%) */}
-                        <div className="w-[25%] space-y-0.5">
-                            <label className="text-[9px] font-bold text-gray-400 uppercase">Card No</label>
+                    {/* Card & Rank Row */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Card */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Card No</label>
                             <div className="relative group">
-                                <div className="absolute left-2.5 top-2 text-gray-400 font-mono text-[10px]">#</div>
+                                <div className="absolute left-4 top-3.5 text-gray-400 font-mono text-sm font-bold">#</div>
                                 <input 
                                     name="cardNo"
                                     type="text" 
-                                    className={`w-full pl-6 pr-2 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:ring-2 focus:ring-${themeColor}-500/20 focus:border-${themeColor}-500 transition-all font-mono font-medium text-gray-700 placeholder:text-gray-300`}
+                                    className={`w-full pl-10 pr-4 py-3 text-base border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-${themeColor}-500/20 focus:border-${themeColor}-500 transition-all font-mono font-bold text-gray-700 placeholder:text-gray-300`}
                                     placeholder="000"
                                     value={formData.cardNo}
                                     onChange={handleInputChange}
@@ -689,49 +691,55 @@ const App: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Desig (35%) */}
-                        <div className="w-[35%] space-y-0.5">
-                            <label className="text-[9px] font-bold text-gray-400 uppercase">Rank</label>
+                        {/* Desig */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Rank</label>
                             <div className="relative">
                                 <select 
                                     name="designation"
-                                    className={`w-full px-2 py-1.5 text-xs border border-gray-200 rounded-md outline-none focus:ring-2 focus:ring-${themeColor}-500/20 focus:border-${themeColor}-500 transition-all font-medium text-gray-700 bg-white appearance-none cursor-pointer`}
+                                    className={`w-full px-4 py-3 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-${themeColor}-500/20 focus:border-${themeColor}-500 transition-all font-bold text-gray-700 bg-white appearance-none cursor-pointer`}
                                     value={formData.designation}
                                     onChange={handleInputChange}
                                 >
                                     <option value="S/O">S/O</option>
                                     <option value="LABOUR">LABOUR</option>
-                                    {/* Special option for ID 418 */}
                                     {formData.cardNo === '418' && (
                                         <option value="JR. SUPPLY CHAIN EXECUTIVE">JR. SUPPLY CHAIN EXECUTIVE</option>
                                     )}
                                 </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                      {/* Special Rate Toggles for Night Bill */}
                     {billType === BillType.NIGHT_ENTERTAINMENT && formData.designation === 'S/O' && (
-                        <div className="bg-orange-50 border border-orange-100 rounded-md p-2 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1">
-                            <span className="text-[9px] font-bold text-orange-400 uppercase">Overtime Rate Selection</span>
-                            <div className="flex gap-2">
+                        <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1">
+                            <span className="text-[10px] font-bold text-orange-400 uppercase">Overtime Rate Selection</span>
+                            <div className="flex gap-3">
                                 {[350, 250].map((rate) => (
-                                    <label key={rate} className={`flex-1 cursor-pointer border ${nightSoRate === rate ? 'border-orange-500 bg-orange-100 text-orange-700' : 'border-orange-200 bg-white text-gray-500'} rounded-md py-1 text-center transition-all`}>
+                                    <label key={rate} className={`flex-1 cursor-pointer border ${nightSoRate === rate ? 'border-orange-500 bg-orange-100 text-orange-700 shadow-sm' : 'border-orange-200 bg-white text-gray-500'} rounded-lg py-2 text-center transition-all`}>
                                         <input type="radio" className="hidden" checked={nightSoRate === rate} onChange={() => setNightSoRate(rate)} />
-                                        <span className="text-[10px] font-bold">{rate} Tk</span>
+                                        <span className="text-sm font-bold">{rate} Tk</span>
                                     </label>
                                 ))}
                             </div>
                         </div>
                     )}
-
-                    <button 
-                        onClick={addEntry}
-                        className={`w-full bg-gray-900 hover:bg-black text-white py-2 rounded-lg font-bold text-xs shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-1`}
-                    >
-                        <Plus size={14} /> Add to List
-                    </button>
-                    <p className="text-[9px] text-center text-gray-400 font-medium">Press <span className="bg-gray-100 px-1 rounded text-gray-600 border border-gray-200">Enter</span> to add quickly</p>
+                    
+                    <div className="pt-4">
+                        <button 
+                            onClick={addEntry}
+                            className={`w-full bg-gray-900 hover:bg-black text-white py-4 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl hover:shadow-gray-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2`}
+                        >
+                            <Plus size={18} strokeWidth={3} /> Add to List
+                        </button>
+                        <p className="text-[10px] text-center text-gray-400 font-medium mt-3">Press <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 border border-gray-200 font-bold mx-1">Enter</span> to add quickly</p>
+                    </div>
                 </div>
             </div>
           </div>
