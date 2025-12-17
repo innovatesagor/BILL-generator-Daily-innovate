@@ -312,6 +312,13 @@ const App: React.FC = () => {
     setBillItems(billItems.filter(item => item.id !== id));
   };
 
+  const updateItemAmount = (id: string, value: string) => {
+    const num = value === '' ? 0 : Number(value);
+    setBillItems(prev => prev.map(item => 
+        item.id === id ? { ...item, taka: num } : item
+    ));
+  };
+
   const handleGeneratePDF = async () => {
     if (billItems.length === 0) {
       alert("Please add at least one entry.");
@@ -493,7 +500,7 @@ const App: React.FC = () => {
                 {/* Server DB Status Pill */}
                 {serverDBStatus === 'connected' && (
                     <div className="mb-2 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-[9px] font-bold flex items-center gap-1">
-                        <CheckCircle2 size={10} /> Linked to Server Database (database.csv)
+                        <CheckCircle2 size={20} /> {employees.length} Record Loaded
                     </div>
                 )}
 
@@ -502,10 +509,9 @@ const App: React.FC = () => {
                    <div className="mb-3 bg-slate-50 p-3 rounded-lg border border-slate-100 animate-in slide-in-from-top-2 fade-in duration-200">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-bold text-[10px] text-slate-500 uppercase flex items-center gap-1">
-                          Database Memory {isUnlocked ? <Unlock size={8} className="text-green-500" /> : <Lock size={8} className="text-slate-300" />}
+                          Excess Memory {isUnlocked ? <Unlock size={8} className="text-green-500" /> : <Lock size={8} className="text-slate-300" />}
                         </span>
-                        <span className="bg-slate-200 text-slate-700 text-[9px] px-1.5 py-0.5 rounded-full font-bold">{employees.length} Records</span>
-                      </div>
+                        </div>
                       
                       {!isUnlocked ? (
                          <div className="flex flex-col gap-2">
@@ -513,14 +519,13 @@ const App: React.FC = () => {
                                 <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
                                 <input 
                                     type="password" 
-                                    placeholder="Enter Security Key"
+                                    placeholder="Locked Record!! Enter Security Key"
                                     className="w-full pl-8 pr-3 py-1.5 text-[10px] border border-slate-200 rounded-md outline-none focus:border-slate-400 transition-all font-mono"
                                     value={securityInput}
                                     onChange={(e) => setSecurityInput(e.target.value)}
                                 />
                             </div>
-                            <p className="text-[9px] text-slate-400 italic text-center">Enter "Fabric2038" to access tools</p>
-                         </div>
+                            </div>
                       ) : (
                         <div className="flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200">
                            {/* Export/Import Buttons */}
@@ -793,7 +798,14 @@ const App: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-3 py-1.5 text-right">
-                                            <span className="font-bold text-gray-700 text-xs">{item.taka}</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                className={`w-16 text-right font-bold text-gray-700 text-xs bg-transparent border-b border-dashed border-gray-300 focus:border-solid focus:border-${themeColor}-500 outline-none transition-all py-0.5`}
+                                                value={item.taka}
+                                                onChange={(e) => updateItemAmount(item.id, e.target.value)}
+                                                onFocus={(e) => e.target.select()}
+                                            />
                                         </td>
                                         <td className="px-3 py-1.5 text-center">
                                             <button 
